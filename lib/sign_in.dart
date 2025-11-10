@@ -1,7 +1,14 @@
 import 'package:flutter/material.dart';
 
-class SignInScreen extends StatelessWidget {
+class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
+
+  @override
+  State<SignInScreen> createState() => _SignInScreenState();
+}
+
+class _SignInScreenState extends State<SignInScreen> {
+  bool _obscurePassword = true;
 
   @override
   Widget build(BuildContext context) {
@@ -19,6 +26,7 @@ class SignInScreen extends StatelessWidget {
         ),
         child: Stack(
           children: [
+            // Student image
             Positioned(
               left: 0,
               top: 42,
@@ -33,6 +41,7 @@ class SignInScreen extends StatelessWidget {
                 ),
               ),
             ),
+            // White container
             Positioned(
               left: 0,
               top: 300,
@@ -50,74 +59,6 @@ class SignInScreen extends StatelessWidget {
                 ),
                 child: Stack(
                   children: [
-                    // Avatar circle and decorations
-                    Positioned(
-                      left: 39,
-                      top: -30,
-                      child: Container(
-                        width: 80,
-                        height: 80,
-                        decoration: const ShapeDecoration(
-                          color: Color(0xFFCDE0FF),
-                          shape: OvalBorder(),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 71.07,
-                      top: -11,
-                      child: Container(
-                        width: 16.25,
-                        height: 16.25,
-                        decoration: const ShapeDecoration(
-                          color: Color(0xFF3B82F6),
-                          shape: OvalBorder(),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 55.51,
-                      top: -3.98,
-                      child: Container(
-                        width: 11.84,
-                        height: 11.84,
-                        decoration: const ShapeDecoration(
-                          color: Color(0xFF3B82F6),
-                          shape: OvalBorder(),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 91.04,
-                      top: -3.98,
-                      child: Container(
-                        width: 11.84,
-                        height: 11.84,
-                        decoration: const ShapeDecoration(
-                          color: Color(0xFF3B82F6),
-                          shape: OvalBorder(),
-                        ),
-                      ),
-                    ),
-                    Positioned(
-                      left: 65.84,
-                      top: 7.46,
-                      child: Container(
-                        width: 26.44,
-                        height: 22.72,
-                        decoration: const ShapeDecoration(
-                          color: Color(0xFF3B82F6),
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.only(
-                              topLeft: Radius.circular(90),
-                              topRight: Radius.circular(90),
-                              bottomLeft: Radius.circular(33),
-                              bottomRight: Radius.circular(33),
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
                     // Form fields
                     Positioned(
                       left: MediaQuery.of(context).size.width * 0.1,
@@ -148,19 +89,17 @@ class SignInScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 13),
-                          child: TextField(
-                            decoration: InputDecoration(
-                              hintText: 'studentemail@mail.com',
-                              hintStyle: TextStyle(
-                                color: Color(0xFFB3B0B0),
-                                fontSize: 12,
-                                fontFamily: 'Outfit',
-                                fontWeight: FontWeight.w500,
-                              ),
-                              border: InputBorder.none,
+                        child: const TextField(
+                          decoration: InputDecoration(
+                            hintText: 'studentemail@mail.com',
+                            hintStyle: TextStyle(
+                              color: Color(0xFFB3B0B0),
+                              fontSize: 12,
+                              fontFamily: 'Outfit',
+                              fontWeight: FontWeight.w500,
                             ),
+                            border: InputBorder.none,
+                            contentPadding: EdgeInsets.only(left: 13, top: 5, bottom: 15),
                           ),
                         ),
                       ),
@@ -194,12 +133,22 @@ class SignInScreen extends StatelessWidget {
                             borderRadius: BorderRadius.circular(10),
                           ),
                         ),
-                        child: const Padding(
-                          padding: EdgeInsets.symmetric(horizontal: 13),
-                          child: TextField(
-                            obscureText: true,
-                            decoration: InputDecoration(
-                              border: InputBorder.none,
+                        child: TextField(
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.only(left: 13, top: 5, bottom: 15, right: 13),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                                color: const Color(0xFFB3B0B0),
+                                size: 20,
+                              ),
+                              onPressed: () {
+                                setState(() {
+                                  _obscurePassword = !_obscurePassword;
+                                });
+                              },
                             ),
                           ),
                         ),
@@ -275,6 +224,45 @@ class SignInScreen extends StatelessWidget {
                             ),
                           ),
                         ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+            // Avatar circle and decorations - NOW OUTSIDE the white container
+            Positioned(
+              left: 39,
+              top: 270,
+              child: Container(
+                width: 80,
+                height: 80,
+                child: Stack(
+                  children: [
+                    Positioned(
+                      left: 0,
+                      top: 0,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: const ShapeDecoration(
+                          color: Color(0xFFCDE0FF),
+                          shape: OvalBorder(),
+                        ),
+                      ),
+                    ),
+                    Positioned(
+                      left: 10,
+                      top: 16,
+                      child: Container(
+                        width: 59,
+                        height: 42,
+                        decoration: const BoxDecoration(
+                          image: DecorationImage(
+                            image: AssetImage('assets/images/glogo.png'),
+                            fit: BoxFit.cover,
+                          ),
+                        ),
                       ),
                     ),
                   ],
