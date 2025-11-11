@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'onboarding.dart';
+import 'dashboard.dart';
 
 void main() {
   runApp(const MyApp());
@@ -21,7 +22,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Outfit',
       ),
-      home: const OnboardingScreen(),
+      home: const HomeScreen(),
     );
   }
 }
