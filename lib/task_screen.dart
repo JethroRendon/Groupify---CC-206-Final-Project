@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dashboard.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -9,7 +8,7 @@ class TasksScreen extends StatefulWidget {
 }
 
 class _TasksScreenState extends State<TasksScreen> {
-  int _selectedBottomNavIndex = 1;
+  int _selectedBottomNavIndex = 1; // Tasks tab is selected
   String _selectedTaskFilter = 'To Do';
 
   final List<String> _taskFilters = ['To Do', 'In Progress', 'Done'];
@@ -43,6 +42,15 @@ class _TasksScreenState extends State<TasksScreen> {
       'statusTextColor': Color(0xFF40C721),
     },
   ];
+
+  // Filter tasks based on selected status
+  List<Map<String, dynamic>> _getFilteredTasks() {
+    return _tasks.where((task) {
+      final taskStatus = task['status'].toString().toLowerCase();
+      final filterStatus = _selectedTaskFilter.toLowerCase();
+      return taskStatus == filterStatus;
+    }).toList();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -101,7 +109,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(50),
                           child: Image.asset(
-                            'assets/images/profilepic.png',
+                            'assets/images/user_profile.png',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -112,7 +120,7 @@ class _TasksScreenState extends State<TasksScreen> {
               ),
             ),
 
-            //All Tasks Header with Add Button
+            // All Tasks Header with Add Button
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 27),
               child: Row(
@@ -142,7 +150,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         color: Color(0xFF22C55E),
                       ),
                       onPressed: () {
-                        //Add new task
+                        // Add new task
                       },
                     ),
                   ),
@@ -168,31 +176,31 @@ class _TasksScreenState extends State<TasksScreen> {
                   return Expanded(
                     child: GestureDetector(
                       onTap: () {
-                        setState((){
+                        setState(() {
                           _selectedTaskFilter = filter;
                         });
                       },
-                    child: Container(
-                      height: 37,
-                      decoration: ShapeDecoration(
-                        color: Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(5),
+                      child: Container(
+                        height: 37,
+                        decoration: ShapeDecoration(
+                          color: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(5),
+                          ),
                         ),
-                      ),
-                      child: Center(
-                        child: Text(
-                          filter,
-                          style: TextStyle(
-                            color: isSelected ? Colors.black : const Color(0xFF64748B),
-                            fontSize: 16,
-                            fontFamily: 'Outfit',
-                            fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                        child: Center(
+                          child: Text(
+                            filter,
+                            style: TextStyle(
+                              color: isSelected ? Colors.black : const Color(0xFF64748B),
+                              fontSize: 16,
+                              fontFamily: 'Outfit',
+                              fontWeight: isSelected ? FontWeight.w500 : FontWeight.w400,
+                            ),
                           ),
                         ),
                       ),
                     ),
-                  ),
                   );
                 }).toList(),
               ),
@@ -202,22 +210,53 @@ class _TasksScreenState extends State<TasksScreen> {
 
             // Tasks List
             Expanded(
-              child: ListView.builder(
-                padding: const EdgeInsets.symmetric(horizontal: 24),
-                itemCount: _tasks.length,
-                itemBuilder: (context, index) {
-                  final task = _tasks[index];
-                  return Padding(
-                    padding: const EdgeInsets.only(bottom: 12),
-                    child: _buildTaskCard(
-                      title: task['title'],
-                      description: task['description'],
-                      assignedTo: task['assignedTo'],
-                      dueDate: task['dueDate'],
-                      status: task['status'],
-                      statusColor: task['statusColor'],
-                      statusTextColor: task['statusTextColor'],
-                    ),
+              child: Builder(
+                builder: (context) {
+                  final filteredTasks = _getFilteredTasks();
+                  
+                  if (filteredTasks.isEmpty) {
+                    return Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.task_outlined,
+                            size: 64,
+                            color: Colors.grey[300],
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            'No tasks in "${_selectedTaskFilter}"',
+                            style: TextStyle(
+                              color: Colors.grey[600],
+                              fontSize: 16,
+                              fontFamily: 'Outfit',
+                              fontWeight: FontWeight.w400,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  }
+                  
+                  return ListView.builder(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    itemCount: filteredTasks.length,
+                    itemBuilder: (context, index) {
+                      final task = filteredTasks[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: _buildTaskCard(
+                          title: task['title'],
+                          description: task['description'],
+                          assignedTo: task['assignedTo'],
+                          dueDate: task['dueDate'],
+                          status: task['status'],
+                          statusColor: task['statusColor'],
+                          statusTextColor: task['statusTextColor'],
+                        ),
+                      );
+                    },
                   );
                 },
               ),
@@ -226,7 +265,7 @@ class _TasksScreenState extends State<TasksScreen> {
         ),
       ),
 
-      //Bottom Navigation Bar
+      // Bottom Navigation Bar
       bottomNavigationBar: Container(
         margin: const EdgeInsets.all(30),
         height: 47,
@@ -245,7 +284,7 @@ class _TasksScreenState extends State<TasksScreen> {
             _buildBottomNavItem(Icons.person, 3),
           ],
         ),
-      )
+      ),
     );
   }
 
@@ -302,7 +341,7 @@ class _TasksScreenState extends State<TasksScreen> {
                       color: Color(0xFF64748B),
                     ),
                     onPressed: () {
-                      //Show options menu
+                      // Show options menu
                     },
                   ),
                 ),
@@ -333,7 +372,7 @@ class _TasksScreenState extends State<TasksScreen> {
                   child: ClipRRect(
                     borderRadius: BorderRadius.circular(50),
                     child: Image.asset(
-                      'assets/image/useravatar.png',
+                      'assets/images/profile_placeholder.png',
                       fit: BoxFit.cover,
                     ),
                   ),
@@ -401,19 +440,10 @@ class _TasksScreenState extends State<TasksScreen> {
         switch (index) {
           case 0:
             // Navigate to Home
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (context) => HomeScreen(),
-              ),
-            );
+            Navigator.pop(context);
             break;
           case 1:
-            // Navigate to Tasks screen
-            Navigator.push(
-            context,
-            MaterialPageRoute(builder: (context) => TasksScreen()),
-            );
+            // Already on Tasks screen
             break;
           case 2:
             // Navigate to Teams
