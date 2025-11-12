@@ -1,0 +1,48 @@
+{
+  "project_info": {
+    "project_number": "489386869256",
+    "project_id": "groupify-9c96f",
+    "storage_bucket": "groupify-9c96f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:489386869256:android:18d1cb50088933fb0fc7bd",
+        "android_client_info": {
+          "package_name": "com.example.groupify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6ojUKH4c4iSmr5LqdMf8USbMFyLbNhcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:489386869256:android:d85220e390d04c0d0fc7bd",
+        "android_client_info": {
+          "package_name": "com.groupify"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA6ojUKH4c4iSmr5LqdMf8USbMFyLbNhcQ"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
