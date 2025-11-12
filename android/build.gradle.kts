@@ -1,3 +1,9 @@
+namespace = "com.groupify"
+plugins {
+    id("com.android.application") version "8.1.2" apply false
+    id("com.google.gms.google-services") version "4.4.2" apply false
+}
+
 allprojects {
     repositories {
         google()
@@ -22,3 +28,6 @@ subprojects {
 tasks.register<Delete>("clean") {
     delete(rootProject.layout.buildDirectory)
 }
+
+apply(plugin = "com.google.gms.google-services")
+
