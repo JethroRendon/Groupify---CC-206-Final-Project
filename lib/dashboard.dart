@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'task_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -603,6 +604,37 @@ class _HomeScreenState extends State<HomeScreen> {
         setState(() {
           _selectedBottomNavIndex = index;
         });
+
+        // Handle navigation based on index
+      switch (index) {
+        case 0:
+          // Already on HomeScreen — do nothing
+          break;
+
+        case 1:
+          //Navigate to TasksScreen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TasksScreen()),
+          );
+          break;
+
+        case 2:
+          // Navigate to TeamsScreen
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => TeamsScreen()),
+          // );
+          break;
+
+        case 3:
+          // Navigate to ProfileScreen
+          // Navigator.push(
+          //   context,
+          //   MaterialPageRoute(builder: (context) => ProfileScreen()),
+          // );
+          break;
+      }
       },
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
