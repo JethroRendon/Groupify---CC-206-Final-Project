@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard.dart';
 import 'file_screen.dart';
+import 'team_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -462,11 +463,11 @@ class _TasksScreenState extends State<TasksScreen> {
             );
             break;
           case 3:
-            // Navigate to ProfileScreen
-            // Navigator.pushReplacement(
-            //   context,
-            //   MaterialPageRoute(builder: (context) => ProfileScreen()),
-            // );
+            // Navigate to TeamScreen
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => TeamScreen()),
+            );
             break;
         }
       },

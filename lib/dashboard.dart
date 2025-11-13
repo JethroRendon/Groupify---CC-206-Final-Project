@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'task_screen.dart';
 import 'file_screen.dart';
+import 'team_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -629,11 +630,11 @@ class _HomeScreenState extends State<HomeScreen> {
           break;
 
         case 3:
-          // Navigate to ProfileScreen
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => ProfileScreen()),
-          // );
+          // Navigate to TeamScreen
+          Navigator.push(
+            context,
+            MaterialPageRoute(builder: (context) => TeamScreen()),
+          );
           break;
       }
       },

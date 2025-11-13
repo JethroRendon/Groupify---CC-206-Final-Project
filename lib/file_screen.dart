@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dashboard.dart';
 import 'task_screen.dart';
+import 'team_screen.dart';
 
 class FilesScreen extends StatefulWidget {
   const FilesScreen({super.key});
@@ -447,7 +448,7 @@ class _FilesScreenState extends State<FilesScreen> {
               ),
               child: Icon(
                 icon,
-                color: const Color(0xFF3B82F6),
+                color: Colors.black,
                 size: 24,
               ),
             ),
@@ -493,7 +494,7 @@ class _FilesScreenState extends State<FilesScreen> {
             ),
             IconButton(
               icon: const Icon(
-                Icons.more_vert,
+                Icons.download_rounded,
                 color: Color(0xFF64748B),
                 size: 24,
               ),
@@ -537,11 +538,11 @@ class _FilesScreenState extends State<FilesScreen> {
           
           break;
         case 3:
-          // Navigate to ProfileScreen
-          // Navigator.pushReplacement(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => ProfileScreen()),
-          // );
+          // Navigate to TeamScreen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => TeamScreen()),
+          );
           break;
         }
       },
