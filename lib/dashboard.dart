@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'task_screen.dart';
+import 'file_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -429,7 +430,7 @@ class _HomeScreenState extends State<HomeScreen> {
           children: [
             _buildBottomNavItem(Icons.home, 0),
             _buildBottomNavItem(Icons.task_alt, 1),
-            _buildBottomNavItem(Icons.groups, 2),
+            _buildBottomNavItem(Icons.folder, 2),
             _buildBottomNavItem(Icons.person, 3),
           ],
         ),
@@ -613,18 +614,18 @@ class _HomeScreenState extends State<HomeScreen> {
 
         case 1:
           //Navigate to TasksScreen
-          Navigator.push(
+          Navigator.pushReplacement(
             context,
             MaterialPageRoute(builder: (context) => TasksScreen()),
           );
           break;
 
         case 2:
-          // Navigate to TeamsScreen
-          // Navigator.push(
-          //   context,
-          //   MaterialPageRoute(builder: (context) => TeamsScreen()),
-          // );
+          //Navigate to TeamsScreen
+          Navigator.pushReplacement(
+            context,
+            MaterialPageRoute(builder: (context) => FilesScreen()),
+          );
           break;
 
         case 3:

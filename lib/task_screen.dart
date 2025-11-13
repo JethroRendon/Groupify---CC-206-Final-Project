@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'dashboard.dart';
+import 'file_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -109,7 +111,7 @@ class _TasksScreenState extends State<TasksScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(50),
                           child: Image.asset(
-                            'assets/images/user_profile.png',
+                            'assets/images/profilepic.png',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -280,7 +282,7 @@ class _TasksScreenState extends State<TasksScreen> {
           children: [
             _buildBottomNavItem(Icons.home, 0),
             _buildBottomNavItem(Icons.task_alt, 1),
-            _buildBottomNavItem(Icons.groups, 2),
+            _buildBottomNavItem(Icons.folder, 2),
             _buildBottomNavItem(Icons.person, 3),
           ],
         ),
@@ -436,22 +438,35 @@ class _TasksScreenState extends State<TasksScreen> {
         setState(() {
           _selectedBottomNavIndex = index;
         });
+
         // Handle navigation based on index
         switch (index) {
           case 0:
-            // Navigate to Home
-            Navigator.pop(context);
+            // Navigate to HomeScreen
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => HomeScreen()),
+            );
             break;
+
           case 1:
-            // Already on Tasks screen
+            // Alreadt in task screen
+
             break;
+
           case 2:
-            // Navigate to Teams
-            print('Navigate to Teams');
+            // Already on FilesScreen — do nothing
+            Navigator.pushReplacement(
+              context,
+              MaterialPageRoute(builder: (context) => FilesScreen()),
+            );
             break;
           case 3:
-            // Navigate to Profile
-            print('Navigate to Profile');
+            // Navigate to ProfileScreen
+            // Navigator.pushReplacement(
+            //   context,
+            //   MaterialPageRoute(builder: (context) => ProfileScreen()),
+            // );
             break;
         }
       },
@@ -463,7 +478,7 @@ class _TasksScreenState extends State<TasksScreen> {
             color: Colors.white,
             size: 24,
           ),
-          if (isSelected)
+          if(isSelected)
             Container(
               margin: const EdgeInsets.only(top: 2),
               width: 3,
