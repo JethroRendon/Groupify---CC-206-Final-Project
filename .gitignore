@@ -45,6 +45,11 @@ app.*.map.json
 /android/app/release
 .vscode/mcp.json
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+
+#API
+>>>>>>> 570e825ff3555054e89fd85f06ab50fb63b35287
 lib/firebase_options.dart
 =======
 
