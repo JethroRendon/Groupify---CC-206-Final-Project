@@ -109,7 +109,7 @@ class _TeamScreenState extends State<TeamScreen> {
                           child: ClipRRect(
                             borderRadius: BorderRadius.circular(50),
                             child: Image.asset(
-                              'assets/images/profilepic.png',
+                              'assets/images/useravatar.png',
                               fit: BoxFit.cover,
                             ),
                           ),

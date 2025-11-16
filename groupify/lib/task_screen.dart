@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dashboard.dart';
 import 'file_screen.dart';
 import 'team_screen.dart';
+import 'new_task_screen.dart';
 
 class TasksScreen extends StatefulWidget {
   const TasksScreen({super.key});
@@ -153,7 +154,12 @@ class _TasksScreenState extends State<TasksScreen> {
                         color: Color(0xFF22C55E),
                       ),
                       onPressed: () {
-                        // Add new task
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) => const NewTaskScreen(),
+                          ),
+                        );
                       },
                     ),
                   ),
@@ -451,7 +457,7 @@ class _TasksScreenState extends State<TasksScreen> {
             break;
 
           case 1:
-            // Alreadt in task screen
+            // Already in task screen
 
             break;
 

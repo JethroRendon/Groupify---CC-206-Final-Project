@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:groupify/new_task_screen.dart';
 import 'task_screen.dart';
 import 'file_screen.dart';
 import 'team_screen.dart';
@@ -170,7 +171,14 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: SizedBox(
                   width: double.infinity,
                   child: ElevatedButton.icon(
-                    onPressed: () {},
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const NewTaskScreen(),
+                        ),
+                      );
+                    },
                     icon: const Icon(Icons.add, size: 24),
                     label: const Text(
                       'Create new task',
