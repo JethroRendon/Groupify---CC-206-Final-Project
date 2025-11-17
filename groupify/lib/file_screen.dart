@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dashboard.dart';
 import 'task_screen.dart';
-import 'team_screen.dart';
+import 'profilescreen.dart';
 
 class FilesScreen extends StatefulWidget {
   const FilesScreen({super.key});
@@ -137,20 +137,30 @@ class _FilesScreenState extends State<FilesScreen> {
                           ],
                         ),
                         const SizedBox(width: 10),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: ShapeDecoration(
-                            color: const Color(0xFFE2E8F0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(50),
+                        GestureDetector(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => const ProfileScreen(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: ShapeDecoration(
+                              color: const Color(0xFFe2E8F0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
+                              ),
                             ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: Image.asset(
-                              'assets/images/profilepic.png',
-                              fit: BoxFit.cover,
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(50),
+                              child: Image.asset(
+                                'assets/images/profilepic.png',
+                                fit: BoxFit.cover,
+                              ),
                             ),
                           ),
                         ),
@@ -541,7 +551,7 @@ class _FilesScreenState extends State<FilesScreen> {
           // Navigate to TeamScreen
           Navigator.pushReplacement(
             context,
-            MaterialPageRoute(builder: (context) => TeamScreen()),
+            MaterialPageRoute(builder: (context) => ProfileScreen()),
           );
           break;
         }

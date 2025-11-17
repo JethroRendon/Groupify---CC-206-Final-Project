@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dashboard.dart';
 import 'file_screen.dart';
-import 'team_screen.dart';
+import 'profilescreen.dart';
 
 class NewTaskScreen extends StatefulWidget {
   const NewTaskScreen({super.key});
@@ -211,7 +211,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                         child: ClipRRect(
                           borderRadius: BorderRadius.circular(50),
                           child: Image.asset(
-                            'assets/images/user_profile.png',
+                            'assets/images/profilepic.png',
                             fit: BoxFit.cover,
                           ),
                         ),
@@ -425,7 +425,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
           children: [
             _buildBottomNavItem(Icons.home, 0),
             _buildBottomNavItem(Icons.task_alt, 1),
-            _buildBottomNavItem(Icons.groups, 2),
+            _buildBottomNavItem(Icons.folder, 2),
             _buildBottomNavItem(Icons.person, 3),
           ],
         ),
@@ -467,7 +467,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
             // Navigate to TeamScreen
             Navigator.pushReplacement(
               context,
-              MaterialPageRoute(builder: (context) => TeamScreen()),
+              MaterialPageRoute(builder: (context) => ProfileScreen()),
             );
             break;
         }

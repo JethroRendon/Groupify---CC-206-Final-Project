@@ -4,9 +4,9 @@ const { authenticateToken } = require('../middleware/auth');
 
 const router = express.Router();
 
-// ============================================
+
 // SIGN UP - After Onboarding Screens
-// ============================================
+
 router.post('/signup', async (req, res) => {
   try {
     const { fullName, email, password, school, course, yearLevel, section } = req.body;
@@ -97,6 +97,57 @@ router.post('/signup', async (req, res) => {
     });
   }
 });
+
+// ============================================
+// SIGN IN - Firebase Authentication
+// ============================================
+router.post('/signin', async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        success: false,
+        error: 'Email and password are required'
+      });
+    }
+
+    // NOTE: The Admin SDK (your backend) cannot directly verify passwords.
+    // Sign-in with password should happen in the client using Firebase Auth.
+    // However, we can help the client by generating a custom token if the user exists.
+
+    const userRecord = await auth.getUserByEmail(email.toLowerCase()).catch(() => null);
+
+    if (!userRecord) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Generate a custom Firebase token (client uses this to authenticate)
+    const customToken = await auth.createCustomToken(userRecord.uid);
+
+    res.status(200).json({
+      success: true,
+      message: 'User found, use this token to sign in with Firebase on the client',
+      customToken,
+      user: {
+        uid: userRecord.uid,
+        email: userRecord.email,
+        displayName: userRecord.displayName || null
+      }
+    });
+
+  } catch (error) {
+    console.error('Sign-in error:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Internal server error'
+    });
+  }
+});
+
 
 // ============================================
 // VERIFY USER - Check Firebase Token
