@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dashboard.dart';
 import 'task_screen.dart';
 import 'file_screen.dart';
+import 'profilescreen.dart';
+import 'services/notifications_service.dart';
 
 class TeamScreen extends StatefulWidget {
   const TeamScreen({super.key});
@@ -50,6 +52,42 @@ class _TeamScreenState extends State<TeamScreen> {
     },
   ];
 
+  final NotificationsService _notificationsService = NotificationsService();
+  List<dynamic> _notifications = [];
+  int _unread = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadNotifications();
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final list = await _notificationsService.getMyNotifications();
+      int unread = 0; for(final n in list){ if(n['read'] != true) unread++; }
+      if(mounted) setState(() { _notifications = list; _unread = unread; });
+    } catch(e){ print('Team notifications error: $e'); }
+  }
+
+  void _showNotifications() async {
+    await _loadNotifications();
+    if(!mounted) return;
+    showDialog(context: context, builder: (c)=> AlertDialog(
+      title: const Text('Notifications', style: TextStyle(fontFamily:'Outfit')),
+      content: SizedBox(width: double.maxFinite, child: _notifications.isEmpty? const Text('No notifications') : ListView.builder(
+        shrinkWrap: true,
+        itemCount: _notifications.length,
+        itemBuilder: (ctx,i){ final n=_notifications[i]; return ListTile(
+          title: Text(n['message']??'', style: const TextStyle(fontFamily:'Outfit')),
+          subtitle: Text((n['type']??'').toString(), style: const TextStyle(fontFamily:'Outfit')),
+          trailing: n['read']==true? const Icon(Icons.check,color:Colors.green,size:18) : TextButton(onPressed: () async { await _notificationsService.markRead(n['id']); Navigator.pop(context); _loadNotifications(); }, child: const Text('Mark read')),
+        ); },
+      )),
+      actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: const Text('Close'))],
+    ));
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -76,42 +114,23 @@ class _TeamScreenState extends State<TeamScreen> {
                     ),
                     Row(
                       children: [
-                        Stack(
-                          children: [
-                            IconButton(
-                              icon: const Icon(Icons.notifications_outlined),
-                              onPressed: () {},
-                            ),
-                            Positioned(
-                              right: 12,
-                              top: 12,
-                              child: Container(
-                                width: 8,
-                                height: 8,
-                                decoration: const ShapeDecoration(
-                                  color: Color(0xFF3EB9AF),
-                                  shape: OvalBorder(),
-                                ),
+                        Stack(children:[
+                          IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: _showNotifications),
+                          if(_unread>0) Positioned(right:6, top:6, child: Container(padding: const EdgeInsets.symmetric(horizontal:6,vertical:2), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)), child: Text(_unread.toString(), style: const TextStyle(color: Colors.white, fontSize:10, fontFamily:'Outfit')))),
+                        ]),
+                        const SizedBox(width: 10),
+                        GestureDetector(
+                          onTap: () { Navigator.push(context, MaterialPageRoute(builder: (_)=> const ProfileScreen())); },
+                          child: Container(
+                            width: 40,
+                            height: 40,
+                            decoration: ShapeDecoration(
+                              color: const Color(0xFFE2E8F0),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(50),
                               ),
                             ),
-                          ],
-                        ),
-                        const SizedBox(width: 10),
-                        Container(
-                          width: 40,
-                          height: 40,
-                          decoration: ShapeDecoration(
-                            color: const Color(0xFFE2E8F0),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(50),
-                            ),
-                          ),
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(50),
-                            child: Image.asset(
-                              'assets/images/useravatar.png',
-                              fit: BoxFit.cover,
-                            ),
+                            child: const Center(child: Icon(Icons.person, color: Color(0xFF64748B))),
                           ),
                         ),
                       ],

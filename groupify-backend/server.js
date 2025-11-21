@@ -1,4 +1,5 @@
 require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 
@@ -26,7 +27,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cors({
   origin: '*', // Allow all origins during development
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'], // Added PATCH
   allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
@@ -82,9 +83,9 @@ app.use((err, req, res, next) => {
   });
 });
 
-// Start Server
+// Start Server with explicit error handling
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Groupify Server running on port ${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔥 Firebase Project: ${process.env.FIREBASE_PROJECT_ID}`);
@@ -97,4 +98,12 @@ app.listen(PORT, () => {
   console.log(`   - Notifications: /api/notifications`);
   console.log(`   - Activities: /api/activities`);
   console.log(`   - Dashboard: /api/dashboard`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} already in use. Choose another with SET PORT=3001 && npm start (Windows) or kill the existing process.`);
+  } else {
+    console.error('❌ Server error:', err);
+  }
 });

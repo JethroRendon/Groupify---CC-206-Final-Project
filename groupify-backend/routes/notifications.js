@@ -6,203 +6,72 @@ const { authenticateToken } = require('../middleware/auth');
 const router = express.Router();
 const NOTIFICATIONS_COLLECTION = 'notifications';
 
-// ============================================
-// CREATE NOTIFICATION
-// ============================================
-router.post('/create', authenticateToken, async (req, res) => {
+// GET my notifications (unread first, then recent)
+router.get('/my', authenticateToken, async (req, res) => {
   try {
-    const { userId, type, title, message, groupId, taskId } = req.body;
-
-    if (!userId || !type || !title || !message) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'userId, type, title, and message are required' 
-      });
-    }
-
-    const notificationData = {
-      userId,
-      type,
-      title,
-      message,
-      groupId: groupId || null,
-      taskId: taskId || null,
-      isRead: false,
-      createdAt: admin.firestore.FieldValue.serverTimestamp()
-    };
-
-    const notifRef = await db.collection(NOTIFICATIONS_COLLECTION).add(notificationData);
-
-    res.status(201).json({
-      success: true,
-      message: 'Notification created',
-      notification: {
-        id: notifRef.id,
-        ...notificationData,
-        createdAt: new Date().toISOString()
-      }
-    });
-
-  } catch (error) {
-    console.error('Create notification error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Internal server error' 
-    });
-  }
-});
-
-// ============================================
-// GET USER NOTIFICATIONS
-// ============================================
-router.get('/my-notifications', authenticateToken, async (req, res) => {
-  try {
-    const { unreadOnly } = req.query;
-
-    let query = db.collection(NOTIFICATIONS_COLLECTION)
-      .where('userId', '==', req.user.uid);
-    
-    if (unreadOnly === 'true') {
-      query = query.where('isRead', '==', false);
-    }
-
-    const notificationsSnapshot = await query
-      .orderBy('createdAt', 'desc')
-      .limit(50)
+    const uid = req.user.uid;
+    // Avoid composite index requirement: fetch by userId only, then sort in memory
+    const snap = await db.collection(NOTIFICATIONS_COLLECTION)
+      .where('userId', '==', uid)
       .get();
-
     const notifications = [];
-    notificationsSnapshot.forEach(doc => {
-      notifications.push({
-        id: doc.id,
-        ...doc.data()
-      });
+    snap.forEach(doc => notifications.push({ id: doc.id, ...doc.data() }));
+    // Sort by createdAt desc, unread first
+    notifications.sort((a, b) => {
+      const aUnread = a.read !== true;
+      const bUnread = b.read !== true;
+      if (aUnread !== bUnread) return aUnread ? -1 : 1;
+      const at = a.createdAt && a.createdAt.toMillis ? a.createdAt.toMillis() : 0;
+      const bt = b.createdAt && b.createdAt.toMillis ? b.createdAt.toMillis() : 0;
+      return bt - at;
     });
-
-    res.status(200).json({
-      success: true,
-      count: notifications.length,
-      notifications
-    });
-
-  } catch (error) {
-    console.error('Get notifications error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Internal server error' 
-    });
+    const limited = notifications.slice(0, 50);
+    res.json({ success: true, count: limited.length, notifications: limited });
+  } catch (e) {
+    console.error('Get notifications error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
-// ============================================
-// MARK NOTIFICATION AS READ
-// ============================================
-router.put('/:notificationId/read', authenticateToken, async (req, res) => {
+// Mark notification read
+router.patch('/:id/read', authenticateToken, async (req, res) => {
   try {
-    const { notificationId } = req.params;
-    const notifDoc = await db.collection(NOTIFICATIONS_COLLECTION).doc(notificationId).get();
-
-    if (!notifDoc.exists) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'Notification not found' 
-      });
+    const { id } = req.params;
+    const ref = db.collection(NOTIFICATIONS_COLLECTION).doc(id);
+    const doc = await ref.get();
+    if (!doc.exists) return res.status(404).json({ success: false, error: 'Not found' });
+    const data = doc.data();
+    if (data.userId !== req.user.uid) {
+      return res.status(403).json({ success: false, error: 'Forbidden' });
     }
-
-    const notifData = notifDoc.data();
-
-    if (notifData.userId !== req.user.uid) {
-      return res.status(403).json({ 
-        success: false,
-        error: 'Access denied' 
-      });
-    }
-
-    await db.collection(NOTIFICATIONS_COLLECTION).doc(notificationId).update({
-      isRead: true
-    });
-
-    res.status(200).json({
-      success: true,
-      message: 'Notification marked as read'
-    });
-
-  } catch (error) {
-    console.error('Mark notification read error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Internal server error' 
-    });
+    await ref.update({ read: true, readAt: admin.firestore.FieldValue.serverTimestamp() });
+    res.json({ success: true });
+  } catch (e) {
+    console.error('Mark notification read error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 
-// ============================================
-// MARK ALL AS READ
-// ============================================
-router.put('/mark-all-read', authenticateToken, async (req, res) => {
+// Clear all notifications for the user
+router.delete('/clear', authenticateToken, async (req, res) => {
   try {
-    const notificationsSnapshot = await db.collection(NOTIFICATIONS_COLLECTION)
-      .where('userId', '==', req.user.uid)
-      .where('isRead', '==', false)
+    const uid = req.user.uid;
+    const snap = await db.collection(NOTIFICATIONS_COLLECTION)
+      .where('userId', '==', uid)
       .get();
+    
+    if (snap.empty) {
+      return res.json({ success: true, deletedCount: 0 });
+    }
 
     const batch = db.batch();
-    notificationsSnapshot.forEach(doc => {
-      batch.update(doc.ref, { isRead: true });
-    });
+    snap.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
 
-    res.status(200).json({
-      success: true,
-      message: `${notificationsSnapshot.size} notifications marked as read`
-    });
-
-  } catch (error) {
-    console.error('Mark all read error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Internal server error' 
-    });
-  }
-});
-
-// ============================================
-// DELETE NOTIFICATION
-// ============================================
-router.delete('/:notificationId', authenticateToken, async (req, res) => {
-  try {
-    const { notificationId } = req.params;
-    const notifDoc = await db.collection(NOTIFICATIONS_COLLECTION).doc(notificationId).get();
-
-    if (!notifDoc.exists) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'Notification not found' 
-      });
-    }
-
-    const notifData = notifDoc.data();
-
-    if (notifData.userId !== req.user.uid) {
-      return res.status(403).json({ 
-        success: false,
-        error: 'Access denied' 
-      });
-    }
-
-    await db.collection(NOTIFICATIONS_COLLECTION).doc(notificationId).delete();
-
-    res.status(200).json({
-      success: true,
-      message: 'Notification deleted'
-    });
-
-  } catch (error) {
-    console.error('Delete notification error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: 'Internal server error' 
-    });
+    res.json({ success: true, deletedCount: snap.size });
+  } catch (e) {
+    console.error('Clear notifications error:', e);
+    res.status(500).json({ success: false, error: 'Internal server error' });
   }
 });
 

@@ -19,6 +19,8 @@ const authenticateToken = async (req, res, next) => {
       uid: decodedToken.uid,
       email: decodedToken.email
     };
+    // Helpful debug: show which UID was authenticated
+    console.log('✅ Token verified for UID:', decodedToken.uid);
     next();
   } catch (error) {
     console.error('Token verification error:', error);

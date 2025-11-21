@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'services/groups_service.dart';
-import 'dashboard.dart';
+import 'group_detail_screen.dart';
 
 class GroupsScreen extends StatefulWidget {
   const GroupsScreen({super.key});
@@ -11,7 +11,7 @@ class GroupsScreen extends StatefulWidget {
 
 class _GroupsScreenState extends State<GroupsScreen> {
   final _groupsService = GroupsService();
-  bool _isLoading = true;
+  bool _isLoading = false;
   List<dynamic> _groups = [];
 
   @override
@@ -21,18 +21,23 @@ class _GroupsScreenState extends State<GroupsScreen> {
   }
 
   Future<void> _loadGroups() async {
+    if (_isLoading) return; // prevent duplicate loads
     setState(() => _isLoading = true);
     try {
       final groups = await _groupsService.getMyGroups();
-      setState(() {
-        _groups = groups;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _groups = groups;
+          _isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => _isLoading = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error loading groups: $e')),
-      );
+      if (mounted) {
+        setState(() => _isLoading = false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error loading groups: $e')),
+        );
+      }
     }
   }
 
@@ -267,35 +272,19 @@ class _GroupsScreenState extends State<GroupsScreen> {
                               '${group['members'].length} members',
                               style: const TextStyle(fontSize: 12),
                             ),
-                            onTap: () {
-                              // Show group details
-                              showDialog(
-                                context: context,
-                                builder: (context) => AlertDialog(
-                                  title: Text(group['name']),
-                                  content: Column(
-                                    mainAxisSize: MainAxisSize.min,
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text('Subject: ${group['subject']}'),
-                                      const SizedBox(height: 8),
-                                      Text('Members: ${group['members'].length}'),
-                                      const SizedBox(height: 8),
-                                      Text('Access Code: ${group['accessCode']}'),
-                                      if (group['description'] != null && group['description'].isNotEmpty) ...[
-                                        const SizedBox(height: 8),
-                                        Text('Description: ${group['description']}'),
-                                      ],
-                                    ],
+                            onTap: () async {
+                              final changed = await Navigator.push<bool>(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => GroupDetailScreen(
+                                    groupId: group['id'],
+                                    groupName: group['name'],
                                   ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: const Text('Close'),
-                                    ),
-                                  ],
                                 ),
                               );
+                              if (changed == true) {
+                                _loadGroups();
+                              }
                             },
                           ),
                         );
