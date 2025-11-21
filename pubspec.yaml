@@ -52,6 +52,12 @@ dependencies:
   # File Picker
   file_picker: ^8.1.2
 
+  # Image Picker
+  image_picker: ^1.0.7
+
+  # URL Launcher for downloads
+  url_launcher: ^6.3.0
+
 
 
 dev_dependencies:

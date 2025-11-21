@@ -5,6 +5,7 @@ import 'file_screen.dart';
 import 'profilescreen.dart';
 import 'services/tasks_service.dart';
 import 'services/groups_service.dart';
+import 'services/notifications_service.dart';
 
 class NewTaskScreen extends StatefulWidget {
   const NewTaskScreen({super.key});
@@ -19,17 +20,24 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
   final _descriptionController = TextEditingController();
   final _tasksService = TasksService();
   final _groupsService = GroupsService();
+  final NotificationsService _notificationsService = NotificationsService();
 
   bool _isLoading = false;
   String? _selectedGroupId;
   List<dynamic> _groups = [];
+  List<dynamic> _members = [];
+  String? _selectedAssigneeId;
+  String? _selectedAssigneeName;
   DateTime? _selectedDueDate;
   TimeOfDay? _selectedDueTime;
+  List<dynamic> _notifications = [];
+  int _unread = 0;
 
   @override
   void initState() {
     super.initState();
     _loadGroups();
+    _loadNotifications();
   }
 
   Future<void> _loadGroups() async {
@@ -38,6 +46,24 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
       setState(() => _groups = groups);
     } catch (e) {
       print('Error loading groups: $e');
+    }
+  }
+
+  Future<void> _loadMembers(String groupId) async {
+    try {
+      final members = await _groupsService.getGroupMembers(groupId);
+      setState(() {
+        _members = members;
+        _selectedAssigneeId = null;
+        _selectedAssigneeName = null;
+      });
+    } catch (e) {
+      print('Error loading members: $e');
+      setState(() {
+        _members = [];
+        _selectedAssigneeId = null;
+        _selectedAssigneeName = null;
+      });
     }
   }
 
@@ -121,6 +147,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
         groupId: _selectedGroupId!,
         description: _descriptionController.text.trim(),
         dueDate: dueDateString,
+        assignedTo: _selectedAssigneeId,
       );
 
       if (!mounted) return;
@@ -146,6 +173,32 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
         setState(() => _isLoading = false);
       }
     }
+  }
+
+  Future<void> _loadNotifications() async {
+    try {
+      final list = await _notificationsService.getMyNotifications();
+      int unread = 0; for (final n in list) { if (n['read'] != true) unread++; }
+      if(mounted) setState(() { _notifications = list; _unread = unread; });
+    } catch (e) { print('NewTask notifications error: $e'); }
+  }
+
+  void _showNotifications() async {
+    await _loadNotifications();
+    if(!mounted) return;
+    showDialog(context: context, builder: (c)=> AlertDialog(
+      title: const Text('Notifications', style: TextStyle(fontFamily:'Outfit')),
+      content: SizedBox(width: double.maxFinite, child: _notifications.isEmpty? const Text('No notifications') : ListView.builder(
+        shrinkWrap: true,
+        itemCount: _notifications.length,
+        itemBuilder: (ctx,i){ final n=_notifications[i]; return ListTile(
+          title: Text(n['message']??'', style: const TextStyle(fontFamily:'Outfit')),
+          subtitle: Text((n['type']??'').toString(), style: const TextStyle(fontFamily:'Outfit')),
+          trailing: n['read']==true? const Icon(Icons.check,color:Colors.green,size:18) : TextButton(onPressed: () async { await _notificationsService.markRead(n['id']); Navigator.pop(context); _loadNotifications(); }, child: const Text('Mark read')),
+        ); },
+      )),
+      actions: [TextButton(onPressed: ()=>Navigator.pop(context), child: const Text('Close'))],
+    ));
   }
 
   String _formatDueDate() {
@@ -190,26 +243,10 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                   ),
                   Row(
                     children: [
-                      Stack(
-                        children: [
-                          IconButton(
-                            icon: const Icon(Icons.notifications_outlined),
-                            onPressed: () {},
-                          ),
-                          Positioned(
-                            right: 12,
-                            top: 12,
-                            child: Container(
-                              width: 8,
-                              height: 8,
-                              decoration: const ShapeDecoration(
-                                color: Color(0xFF3EB9AF),
-                                shape: OvalBorder(),
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
+                      Stack(children:[
+                        IconButton(icon: const Icon(Icons.notifications_outlined), onPressed: _showNotifications),
+                        if(_unread>0) Positioned(right:6,top:6, child: Container(padding: const EdgeInsets.symmetric(horizontal:6,vertical:2), decoration: BoxDecoration(color: Colors.red, borderRadius: BorderRadius.circular(10)), child: Text(_unread.toString(), style: const TextStyle(color: Colors.white, fontSize:10, fontFamily:'Outfit')))),
+                      ]),
                       const SizedBox(width: 10),
                       Container(
                         width: 40,
@@ -335,6 +372,7 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                         );
                         if (selected != null) {
                           setState(() => _selectedGroupId = selected);
+                          await _loadMembers(selected);
                         }
                       },
                       child: Container(
@@ -363,6 +401,105 @@ class _NewTaskScreenState extends State<NewTaskScreen> {
                                   fontSize: 16,
                                   fontFamily: 'Outfit',
                                   fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 19),
+
+                    // Assign To (optional)
+                    GestureDetector(
+                      onTap: () async {
+                        if (_selectedGroupId == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(content: Text('Please select a group first')),
+                          );
+                          return;
+                        }
+                        final selected = await showDialog<Map<String, String>>(
+                          context: context,
+                          builder: (context) => AlertDialog(
+                            title: const Text('Assign to member', style: TextStyle(fontFamily: 'Outfit')),
+                            content: SizedBox(
+                              width: double.maxFinite,
+                              child: _members.isEmpty
+                                  ? const Padding(
+                                      padding: EdgeInsets.all(20),
+                                      child: Text('No members found'),
+                                    )
+                                  : ListView.builder(
+                                      shrinkWrap: true,
+                                      itemCount: _members.length,
+                                      itemBuilder: (context, index) {
+                                        final m = _members[index];
+                                        // Backend returns members with keys: uid, fullName, email
+                                        final name = (m['fullName'] ?? m['name'] ?? m['email'] ?? m['uid'] ?? '').toString();
+                                        return ListTile(
+                                          leading: const Icon(Icons.person_outline),
+                                          title: Text(name, style: const TextStyle(fontFamily: 'Outfit')),
+                                          subtitle: (m['email'] != null && (m['email'] as String).isNotEmpty) ? Text(m['email'], style: const TextStyle(fontFamily: 'Outfit')) : null,
+                                          onTap: () => Navigator.pop(context, {
+                                            // Use 'uid' from backend as the member id
+                                            'id': (m['uid'] ?? m['userId'] ?? m['id'] ?? '').toString(),
+                                            'name': name,
+                                          }),
+                                        );
+                                      },
+                                    ),
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              if (_selectedAssigneeId != null)
+                                TextButton(
+                                  onPressed: () => Navigator.pop(context, {'id': '', 'name': ''}),
+                                  child: const Text('Clear'),
+                                ),
+                            ],
+                          ),
+                        );
+                        if (selected != null) {
+                          setState(() {
+                            _selectedAssigneeId = selected['id']!.isEmpty ? null : selected['id'];
+                            _selectedAssigneeName = selected['name']!.isEmpty ? null : selected['name'];
+                          });
+                        }
+                      },
+                      child: Container(
+                        width: double.infinity,
+                        height: 54,
+                        decoration: ShapeDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+                          child: Row(
+                            children: [
+                              const Icon(Icons.person_add_alt_1_outlined, color: Color(0xFF64748B), size: 24),
+                              const SizedBox(width: 14),
+                              Expanded(
+                                child: Text(
+                                  _selectedAssigneeName != null
+                                      ? 'Assigned to: $_selectedAssigneeName'
+                                      : 'Assign to (optional)',
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: _selectedAssigneeName != null
+                                        ? const Color(0xFF0F172A)
+                                        : const Color(0xFF64748B),
+                                    fontSize: 16,
+                                    fontFamily: 'Outfit',
+                                    fontWeight: FontWeight.w500,
+                                  ),
                                 ),
                               ),
                             ],

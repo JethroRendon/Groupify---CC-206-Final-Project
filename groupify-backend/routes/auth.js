@@ -7,68 +7,47 @@ const router = express.Router();
 
 // SIGN UP - After Onboarding Screens
 
-router.post('/signup', async (req, res) => {
+router.post('/signup', authenticateToken, async (req, res) => {
   try {
     const { fullName, email, password, school, course, yearLevel, section } = req.body;
 
+    console.log('📝 Signup request received');
+    console.log('Headers:', JSON.stringify(req.headers));
+    console.log('Body:', JSON.stringify(req.body));
+    console.log('👤 Authenticated user UID:', req.user && req.user.uid);
+
     // Validation
-    if (!fullName || !email || !password || !school || !course || !yearLevel || !section) {
+    if (!fullName || !email || !school || !course || !yearLevel || !section) {
       return res.status(400).json({ 
         success: false,
         error: 'All fields are required'
       });
     }
 
-    // Email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Invalid email format' 
-      });
-    }
-
-    // Password validation
-    if (password.length < 8) {
-      return res.status(400).json({ 
-        success: false,
-        error: 'Password must be at least 8 characters' 
-      });
-    }
-
-    // Create Firebase Auth user
-    const userRecord = await auth.createUser({
-      email: email.toLowerCase(),
-      password: password,
-      displayName: fullName
-    });
-
-    // Create user document in Firestore
+    // Create user document in Firestore using authenticated UID
     const userData = {
-      uid: userRecord.uid,
+      uid: req.user.uid,
       fullName,
       email: email.toLowerCase(),
       school,
       course,
       yearLevel,
       section,
-      hasSeenOnboarding: true,  // They just completed onboarding
+      hasSeenOnboarding: true,
+      groupIds: [], // Initialize empty array
       createdAt: new Date().toISOString(),
       lastLogin: new Date().toISOString()
     };
 
-    await db.collection(collections.USERS).doc(userRecord.uid).set(userData);
+    await db.collection(collections.USERS).doc(req.user.uid).set(userData);
+    console.log('✅ User document created in Firestore for UID:', req.user.uid);
 
-    // Generate custom token (optional - client can sign in directly)
-    const customToken = await auth.createCustomToken(userRecord.uid);
-
-    // Return success - redirect to Home
+    // Return success
     res.status(201).json({
       success: true,
       message: 'Account created successfully',
-      customToken,  // Client uses this to sign in with Firebase
       user: {
-        uid: userRecord.uid,
+        uid: req.user.uid,
         fullName,
         email: email.toLowerCase(),
         school,
@@ -77,23 +56,14 @@ router.post('/signup', async (req, res) => {
         section,
         hasSeenOnboarding: true
       },
-      redirectTo: 'home'  // Go directly to home after signup
+      redirectTo: 'home'
     });
 
   } catch (error) {
-    console.error('Signup error:', error);
-    
-    // Handle Firebase-specific errors
-    if (error.code === 'auth/email-already-exists') {
-      return res.status(409).json({ 
-        success: false,
-        error: 'User already exists with this email' 
-      });
-    }
-    
+    console.error('❌ Signup error:', error);
     res.status(500).json({ 
       success: false,
-      error: 'Internal server error' 
+      error: 'Internal server error: ' + error.message 
     });
   }
 });
@@ -153,16 +123,40 @@ router.post('/signin', async (req, res) => {
 // VERIFY USER - Check Firebase Token
 // ============================================
 router.get('/verify', authenticateToken, async (req, res) => {
+  console.log('GET /api/auth/verify called for uid:', req.user && req.user.uid);
+  console.log('Request headers (verify):', JSON.stringify(req.headers));
   try {
     // Get user data from Firestore
-    const userDoc = await db.collection(collections.USERS).doc(req.user.uid).get();
-    
+    let userDoc = await db.collection(collections.USERS).doc(req.user.uid).get();
+
+    // If no Firestore document, attempt to create one from Firebase Auth record
     if (!userDoc.exists) {
-      return res.status(404).json({ 
-        success: false,
-        error: 'User not found',
-        requiresAuth: true
-      });
+      console.log('User doc not found for UID:', req.user.uid, '- attempting to create from Firebase Auth record');
+      try {
+        const userRecord = await auth.getUser(req.user.uid);
+        const userDataFromAuth = {
+          uid: req.user.uid,
+          fullName: userRecord.displayName || '',
+          email: userRecord.email || '',
+          school: '',
+          course: '',
+          yearLevel: '',
+          section: '',
+          hasSeenOnboarding: true,
+          groupIds: [],
+          createdAt: new Date().toISOString(),
+          lastLogin: new Date().toISOString()
+        };
+
+        await db.collection(collections.USERS).doc(req.user.uid).set(userDataFromAuth);
+        console.log('✅ Created Firestore user doc for UID from Auth:', req.user.uid);
+
+        // Refresh userDoc reference
+        userDoc = await db.collection(collections.USERS).doc(req.user.uid).get();
+      } catch (err) {
+        console.error('Error creating user doc from Auth for UID', req.user.uid, err);
+        return res.status(500).json({ success: false, error: 'Internal server error' });
+      }
     }
 
     const userData = userDoc.data();
@@ -291,3 +285,63 @@ router.delete('/delete-account', authenticateToken, async (req, res) => {
 });
 
 module.exports = router;
+
+// ----------------------
+// DEV-ONLY: test signup without auth (helps simulate client requests locally)
+// ----------------------
+if (process.env.NODE_ENV !== 'production') {
+  router.post('/test-signup', async (req, res) => {
+    try {
+      const { uid, fullName, email, school, course, yearLevel, section } = req.body;
+      console.log('DEV test-signup called. Body:', JSON.stringify(req.body));
+
+      if (!uid || !fullName || !email) {
+        return res.status(400).json({ success: false, error: 'uid, fullName and email are required for test-signup' });
+      }
+
+      const userData = {
+        uid,
+        fullName,
+        email: email.toLowerCase(),
+        school: school || '',
+        course: course || '',
+        yearLevel: yearLevel || '',
+        section: section || '',
+        hasSeenOnboarding: true,
+        groupIds: [],
+        createdAt: new Date().toISOString(),
+        lastLogin: new Date().toISOString()
+      };
+
+      await db.collection(collections.USERS).doc(uid).set(userData);
+      console.log('✅ DEV: created user doc for', uid);
+
+      res.status(201).json({ success: true, message: 'DEV: user created', user: userData });
+    } catch (err) {
+      console.error('DEV test-signup error:', err);
+      res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+  });
+  
+  // DEV-only: verify by uid without token (helps simulate client verify on local)
+  router.post('/dev-verify', async (req, res) => {
+    try {
+      const { uid } = req.body;
+      console.log('DEV dev-verify called for uid:', uid);
+      if (!uid) return res.status(400).json({ success: false, error: 'uid required' });
+
+      const userDoc = await db.collection(collections.USERS).doc(uid).get();
+      if (!userDoc.exists) {
+        return res.status(404).json({ success: false, error: 'User not found' });
+      }
+
+      const userData = userDoc.data();
+      const redirectTo = userData.hasSeenOnboarding ? 'home' : 'onboarding';
+
+      return res.status(200).json({ success: true, redirectTo, user: userData });
+    } catch (err) {
+      console.error('DEV dev-verify error:', err);
+      return res.status(500).json({ success: false, error: 'Internal server error' });
+    }
+  });
+}

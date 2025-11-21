@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'services/auth_service.dart';
 import 'dashboard.dart';
+import 'services/api_client.dart';
+import 'onboarding.dart';
 
 class CreateAccountScreen extends StatefulWidget {
   const CreateAccountScreen({super.key});
@@ -56,10 +58,34 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
         const SnackBar(content: Text('Account created successfully!'), backgroundColor: Colors.green),
       );
 
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+      // Ensure backend recognizes the user and decide where to redirect
+      // Refresh token and give a short pause so Firestore writes propagate.
+      await Future.delayed(const Duration(seconds: 1));
+      final token = await _authService.getToken();
+      print('DEBUG: signup -> using token: ${token?.substring(0, 20)}...');
+      final api = ApiClient();
+      api.setToken(token);
+      final verifyResp = await api.get('/auth/verify');
+      var redirectTo = verifyResp['redirectTo'] as String? ?? 'home';
+      redirectTo = redirectTo.trim().toLowerCase();
+      print('DEBUG: signup verify redirectTo => "$redirectTo"');
+
+      if (!mounted) return;
+      if (redirectTo == 'onboarding') {
+        print('NAV: sign-up -> Onboarding');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          (route) => false,
+        );
+      } else {
+        print('NAV: sign-up -> Home');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(

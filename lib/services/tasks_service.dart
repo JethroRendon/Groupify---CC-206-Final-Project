@@ -55,6 +55,7 @@ class TasksService {
     String? status,
     String? dueDate,
     String? priority,
+    int? progress,
   }) async {
     await _setToken();
     final body = <String, dynamic>{};
@@ -64,6 +65,7 @@ class TasksService {
     if (status != null) body['status'] = status;
     if (dueDate != null) body['dueDate'] = dueDate;
     if (priority != null) body['priority'] = priority;
+    if (progress != null) body['progress'] = progress;
     await _apiClient.put('/tasks/$taskId', body);
   }
 

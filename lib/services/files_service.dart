@@ -44,9 +44,10 @@ class FilesService {
     }
   }
 
-  Future<List<dynamic>> getFilesByGroup(String groupId) async {
+  Future<List<dynamic>> getFilesByGroup(String groupId, {bool signed = false}) async {
     await _setToken();
-    final response = await _apiClient.get('/files/group/$groupId');
+    final endpoint = '/files/group/$groupId' + (signed ? '?signed=1' : '');
+    final response = await _apiClient.get(endpoint);
     return response['files'] ?? [];
   }
 

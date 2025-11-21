@@ -2,7 +2,9 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'create_account.dart';
 import 'dashboard.dart';
+import 'onboarding.dart';
 import 'services/auth_service.dart';
+import 'services/api_client.dart';
 
 class SignInScreen extends StatefulWidget {
   const SignInScreen({super.key});
@@ -31,13 +33,32 @@ class _SignInScreenState extends State<SignInScreen> {
         password: _passwordController.text,
       );
 
-      if (!mounted) return;
+      // After sign in, obtain fresh token and verify with backend
+      final token = await _authService.getToken();
+      final api = ApiClient();
+      api.setToken(token);
+      final verifyResp = await api.get('/auth/verify');
 
-      // Navigate to dashboard
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
-      );
+      if (!mounted) return;
+      var redirectTo = verifyResp['redirectTo'] as String? ?? 'home';
+      redirectTo = redirectTo.trim().toLowerCase();
+      print('DEBUG: sign-in verify redirectTo => "$redirectTo"');
+
+      if (redirectTo == 'onboarding') {
+        print('NAV: sign-in -> Onboarding');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+          (route) => false,
+        );
+      } else {
+        print('NAV: sign-in -> Home');
+        Navigator.pushAndRemoveUntil(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+          (route) => false,
+        );
+      }
     } catch (e) {
       if (!mounted) return;
       
@@ -402,7 +423,7 @@ class _SignInScreenState extends State<SignInScreen> {
             Positioned(
               left: 39,
               top: 270,
-              child: Container(
+              child: SizedBox(
                 width: 80,
                 height: 80,
                 child: Stack(

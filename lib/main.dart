@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'onboarding.dart';
 import 'dashboard.dart';
 import 'services/auth_service.dart';
-import 'test_api.dart';
-import 'debug_signup.dart';
+import 'services/api_client.dart';
+import 'dart:async';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -27,7 +28,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
         fontFamily: 'Outfit',
       ),
-      home: const DebugSignupScreen(),
+      home: const SplashScreen(),
     );
   }
 }
@@ -49,17 +50,61 @@ class _SplashScreenState extends State<SplashScreen> {
   }
 
   Future<void> _checkAuth() async {
-    await Future.delayed(const Duration(seconds: 2));
-    final isLoggedIn = await _authService.isLoggedIn();
-    
+    // Wait for the Firebase auth state to initialize. On web the currentUser
+    // may be null briefly until the SDK restores persistence. We listen to
+    // authStateChanges for the first settled value, but add a timeout so the
+    // splash doesn't hang indefinitely if something is off (fallback to currentUser).
+    final firebaseUser = await FirebaseAuth.instance
+      .authStateChanges()
+      .first
+      .timeout(const Duration(seconds: 6), onTimeout: () => FirebaseAuth.instance.currentUser);
+
     if (!mounted) return;
-    
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(
-        builder: (context) => isLoggedIn ? const HomeScreen() : const OnboardingScreen(),
-      ),
-    );
+
+    if (firebaseUser == null) {
+      print('DEBUG: No Firebase user signed in (auth state null)');
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+      );
+      return;
+    }
+    print('DEBUG: Firebase user present on splash: ${firebaseUser.uid} ${firebaseUser.email}');
+
+    // User is signed in — verify token with backend to determine redirect
+    try {
+      // Refresh token to ensure server accepts it
+      final token = await _authService.getToken();
+      final api = ApiClient();
+      api.setToken(token);
+
+      final resp = await api.get('/auth/verify');
+      var redirectTo = resp['redirectTo'] as String? ?? 'home';
+      redirectTo = redirectTo.trim().toLowerCase();
+
+      print('DEBUG: /auth/verify redirectTo => "$redirectTo"');
+
+      if (!mounted) return;
+      if (redirectTo == 'onboarding') {
+        print('NAV: Navigating to Onboarding from Splash');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+        );
+      } else {
+        print('NAV: Navigating to Home from Splash');
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } catch (e) {
+      // If verify fails, fall back to onboarding (or sign-in)
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (context) => const OnboardingScreen()),
+      );
+    }
   }
 
   @override
