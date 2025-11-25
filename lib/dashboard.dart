@@ -420,7 +420,7 @@ class _HomeScreenState extends State<HomeScreen> {
                             Navigator.push(context, MaterialPageRoute(builder: (_) => const TasksScreen(initialFilter: 'All')));
                           },
                           child: Container(
-                            height: 171,
+                            height: 200,
                             width: MediaQuery.of(context).size.width,
                             decoration: ShapeDecoration(
                               color: const Color(0xFF3B82F6),
@@ -428,42 +428,60 @@ class _HomeScreenState extends State<HomeScreen> {
                                 borderRadius: BorderRadius.circular(10),
                               ),
                             ),
-                            child: Padding(
-                              padding: const EdgeInsets.all(16),
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  const Text(
-                                    'Total tasks',
-                                    style: TextStyle(
-                                      color: Color(0xFFDAEAFE),
-                                      fontSize: 12,
-                                      fontFamily: 'Outfit',
-                                      fontWeight: FontWeight.w400,
-                                    ),
+                            child: Stack(
+                              children: [
+                                Padding(
+                                  padding: const EdgeInsets.all(16),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      const Text(
+                                        'Total tasks',
+                                        style: TextStyle(
+                                          color: Color(0xFFDAEAFE),
+                                          fontSize: 12,
+                                          fontFamily: 'Outfit',
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 5),
+                                      Text(
+                                        '$_totalTasks',
+                                        style: const TextStyle(
+                                          color: Colors.white,
+                                          fontSize: 64,
+                                          fontFamily: 'Outfit',
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                      const Spacer(),
+                                      Text(
+                                        '$_completedTasks completed',
+                                        style: const TextStyle(
+                                          color: Color(0xFFDAEAFE),
+                                          fontSize: 12,
+                                          fontFamily: 'Outfit',
+                                          fontWeight: FontWeight.w400,
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(height: 5),
-                                  Text(
-                                    '$_totalTasks',
-                                    style: const TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 64,
-                                      fontFamily: 'Outfit',
-                                      fontWeight: FontWeight.w600,
-                                    ),
+                                ),
+                                // Image on the right - larger and positioned
+                                Positioned(
+                                  right: 0,
+                                  bottom: -35,
+                                  child: Image.asset(
+                                    'assets/images/numberoftaskimage.png',
+                                    width: 250,
+                                    height: 250,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const SizedBox(width: 250, height: 250);
+                                    },
                                   ),
-                                  const Spacer(),
-                                  Text(
-                                    '$_completedTasks completed',
-                                    style: const TextStyle(
-                                      color: Color(0xFFDAEAFE),
-                                      fontSize: 12,
-                                      fontFamily: 'Outfit',
-                                      fontWeight: FontWeight.w400,
-                                    ),
-                                  ),
-                                ],
-                              ),
+                                ),
+                              ],
                             ),
                           ),
                         ),
@@ -484,6 +502,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: _buildSmallStatsCard(
                                   title: 'Pending tasks',
                                   number: '$_pendingTasks',
+                                  imagePath: 'assets/images/unfinishedtask.png',
                                 ),
                               ),
                             ),
@@ -496,6 +515,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 child: _buildSmallStatsCard(
                                   title: 'Completed',
                                   number: '$_completedTasks',
+                                  imagePath: 'assets/images/teamtask.png',
                                 ),
                               ),
                             ),
@@ -661,41 +681,64 @@ class _HomeScreenState extends State<HomeScreen> {
     return 'Good Evening,';
   }
 
-  Widget _buildSmallStatsCard({required String title, required String number}) {
+  Widget _buildSmallStatsCard({
+    required String title,
+    required String number,
+    String? imagePath,
+  }) {
     return Container(
-      height: 104,
+      height: 130,
       decoration: ShapeDecoration(
         color: const Color(0xFF3B82F6),
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(10),
         ),
       ),
-      child: Padding(
-        padding: const EdgeInsets.all(7),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              title,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 12,
-                fontFamily: 'Outfit',
-                fontWeight: FontWeight.w400,
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 12,
+                    fontFamily: 'Outfit',
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  number,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontFamily: 'Outfit',
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          if (imagePath != null)
+            Positioned(
+              right: 0,
+              bottom: -10,
+              child: Image.asset(
+                imagePath,
+                width: 80,
+                height: 80,
+                fit: BoxFit.contain,
+                errorBuilder: (context, error, stackTrace) {
+                  return const SizedBox(width: 80, height: 80);
+                },
               ),
             ),
-            const SizedBox(height: 4),
-            Text(
-              number,
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 32,
-                fontFamily: 'Outfit',
-                fontWeight: FontWeight.w600,
-              ),
-            ),
-          ],
-        ),
+        ],
       ),
     );
   }
