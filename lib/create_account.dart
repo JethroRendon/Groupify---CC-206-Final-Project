@@ -24,17 +24,144 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
   bool _isLoading = false;
+  bool _acceptedTerms = false;
   String? _selectedYearLevel;
   String? _selectedSection;
 
   final List<String> _yearLevels = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
   final List<String> _sections = ['A', 'B'];
 
+  void _showTermsAndConditions() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text(
+          'Terms and Conditions',
+          style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: const [
+              Text(
+                'Welcome to Groupify!',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600, fontSize: 16),
+              ),
+              SizedBox(height: 12),
+              Text(
+                'By creating an account, you agree to the following terms and conditions:',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '1. Account Information',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'You agree to provide accurate and complete information during registration. You are responsible for maintaining the confidentiality of your account credentials.',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '2. User Conduct',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'You agree to use Groupify for lawful purposes only. You will not upload harmful content, spam, or violate the rights of others.',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '3. Data Collection',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'We collect and store your name, email, school information, and uploaded files to provide our services. Your data will be protected and not shared with third parties without consent.',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '4. Group Activities',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'You are responsible for content you share in groups. Group creators have the right to manage membership and content within their groups.',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '5. File Storage',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'Files uploaded to Groupify are stored securely. We reserve the right to remove content that violates our policies or applicable laws.',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '6. Account Termination',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'We reserve the right to suspend or terminate accounts that violate these terms or engage in abusive behavior.',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                '7. Changes to Terms',
+                style: TextStyle(fontFamily: 'Outfit', fontWeight: FontWeight.w600),
+              ),
+              SizedBox(height: 8),
+              Text(
+                'We may update these terms from time to time. Continued use of Groupify constitutes acceptance of updated terms.',
+                style: TextStyle(fontFamily: 'Outfit'),
+              ),
+              SizedBox(height: 16),
+              Text(
+                'By clicking "Accept", you acknowledge that you have read and agree to these Terms and Conditions.',
+                style: TextStyle(fontFamily: 'Outfit', fontStyle: FontStyle.italic),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel', style: TextStyle(fontFamily: 'Outfit')),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              setState(() => _acceptedTerms = true);
+              Navigator.pop(context);
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: const Color(0xFF3B82F6),
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Accept', style: TextStyle(fontFamily: 'Outfit')),
+          ),
+        ],
+      ),
+    );
+  }
+
   Future<void> _handleSignUp() async {
     if (!_formKey.currentState!.validate()) return;
     if (_passwordController.text != _confirmPasswordController.text) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Passwords do not match'), backgroundColor: Colors.red),
+      );
+      return;
+    }
+    if (!_acceptedTerms) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please accept the Terms and Conditions'), backgroundColor: Colors.red),
       );
       return;
     }
@@ -209,7 +336,55 @@ class _CreateAccountScreenState extends State<CreateAccountScreen> {
                         // Confirm Password
                         _buildLabel('Confirm Password'),
                         _buildPasswordField(_confirmPasswordController, _obscureConfirmPassword, () => setState(() => _obscureConfirmPassword = !_obscureConfirmPassword)),
-                        const SizedBox(height: 30),
+                        const SizedBox(height: 20),
+
+                        // Terms and Conditions Checkbox
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _acceptedTerms,
+                              onChanged: (value) {
+                                if (value == true) {
+                                  _showTermsAndConditions();
+                                } else {
+                                  setState(() => _acceptedTerms = false);
+                                }
+                              },
+                              activeColor: const Color(0xFF3B82F6),
+                            ),
+                            Expanded(
+                              child: GestureDetector(
+                                onTap: () {
+                                  if (!_acceptedTerms) {
+                                    _showTermsAndConditions();
+                                  } else {
+                                    setState(() => _acceptedTerms = false);
+                                  }
+                                },
+                                child: RichText(
+                                  text: const TextSpan(
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontFamily: 'Outfit',
+                                      color: Color(0xFF0F172A),
+                                    ),
+                                    children: [
+                                      TextSpan(text: 'I agree to the '),
+                                      TextSpan(
+                                        text: 'Terms and Conditions',
+                                        style: TextStyle(
+                                          color: Color(0xFF3B82F6),
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 20),
 
                         // Create Account Button
                         SizedBox(
