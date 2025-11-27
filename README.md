@@ -59,7 +59,6 @@ Make sure that the mobile application is already running beforehand.
 ### **Frontend (Client-Side)**
 
 * Flutter (Dart) – Cross-platform mobile development
-* Provider / Riverpod – State management
 
 ### **Backend (Firebase Services)**
 
