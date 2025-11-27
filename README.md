@@ -1,7 +1,3 @@
-Here is a **fully stylized, clean, GitHub-ready README section** you can copy and paste directly:
-
----
-
 # **Groupify – Academic Group Project Management App**
 
 ### **Final Project for CC 206: Application Development and Emerging Technologies**
