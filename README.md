@@ -76,6 +76,3 @@ Make sure that the mobile application is already running beforehand.
 * **Justin Jones Brey**
 * **Jethro Rendon**
 
----
-
-If you want, I can also format this as a complete README.md with badges, section dividers, and optional screenshots.
