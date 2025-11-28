@@ -402,93 +402,155 @@ class _FilesScreenState extends State<FilesScreen> {
 
   Future<void> _pickFiles() async {
     try {
+      print('[FilesScreen] Getting groups...');
       final groups = await _groupsService.getMyGroups();
+      print('[FilesScreen] Found ${groups.length} groups');
       
       if (groups.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please create a group first!'),
-            backgroundColor: Colors.orange,
-          ),
-        );
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Please create a group first!'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
         return;
       }
 
+      print('[FilesScreen] Opening file picker...');
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         allowMultiple: false,
         type: FileType.any,
       );
 
-      if (result != null && result.files.isNotEmpty) {
-        final file = result.files.first;
-        
-        final selectedGroupId = await showDialog<String>(
+      if (result == null || result.files.isEmpty) {
+        print('[FilesScreen] No file selected');
+        return;
+      }
+
+      final file = result.files.first;
+      print('[FilesScreen] File selected: ${file.name}, size: ${file.size} bytes');
+      
+      if (file.bytes == null) {
+        print('[FilesScreen] ERROR: File bytes are null');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Failed to read file. Please try again.'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+        return;
+      }
+
+      print('[FilesScreen] Showing group selection dialog...');
+      final selectedGroupId = await showDialog<String>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Select Group', style: TextStyle(fontFamily: 'Outfit')),
+          content: SizedBox(
+            width: double.maxFinite,
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: groups.length,
+              itemBuilder: (context, index) {
+                final group = groups[index];
+                return ListTile(
+                  title: Text(group['name'] ?? 'Unnamed Group'),
+                  subtitle: Text(group['subject'] ?? ''),
+                  onTap: () => Navigator.pop(context, group['id']),
+                );
+              },
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+          ],
+        ),
+      );
+
+      if (selectedGroupId == null) {
+        print('[FilesScreen] No group selected');
+        return;
+      }
+
+      print('[FilesScreen] Group selected: $selectedGroupId');
+      
+      // Show loading dialog
+      if (mounted) {
+        showDialog(
           context: context,
-          builder: (context) => AlertDialog(
-            title: const Text('Select Group', style: TextStyle(fontFamily: 'Outfit')),
-            content: SizedBox(
-              width: double.maxFinite,
-              child: ListView.builder(
-                shrinkWrap: true,
-                itemCount: groups.length,
-                itemBuilder: (context, index) {
-                  final group = groups[index];
-                  return ListTile(
-                    title: Text(group['name']),
-                    subtitle: Text(group['subject']),
-                    onTap: () => Navigator.pop(context, group['id']),
-                  );
-                },
+          barrierDismissible: false,
+          builder: (context) => WillPopScope(
+            onWillPop: () async => false,
+            child: const AlertDialog(
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('Uploading file...', style: TextStyle(fontFamily: 'Outfit')),
+                ],
               ),
             ),
           ),
         );
+      }
 
-        if (selectedGroupId != null && file.bytes != null) {
-          try {
-            // Show uploading message
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('Uploading file...'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-            }
+      try {
+        print('[FilesScreen] Starting upload...');
+        final response = await _filesService.uploadFile(
+          fileBytes: file.bytes!,
+          fileName: file.name,
+          groupId: selectedGroupId,
+        );
+        
+        print('[FilesScreen] Upload successful: $response');
 
-            await _filesService.uploadFile(
-              fileBytes: file.bytes!,
-              fileName: file.name,
-              groupId: selectedGroupId,
-            );
-
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('File uploaded successfully!'),
-                  backgroundColor: Colors.green,
-                  duration: Duration(seconds: 2),
-                ),
-              );
-              // Reload files and notifications in background without blocking UI
-              _loadFiles();
-              _loadNotifications();
-            }
-          } catch (e) {
-            print('Error uploading file: $e');
-            if (mounted) {
-              ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Upload failed: $e'), backgroundColor: Colors.red),
-              );
-            }
-          }
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('File uploaded successfully!'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 3),
+            ),
+          );
+          
+          // Reload files
+          await _loadFiles();
+          await _loadNotifications();
+        }
+      } catch (e) {
+        print('[FilesScreen] Upload error: $e');
+        
+        if (mounted) {
+          Navigator.pop(context); // Close loading dialog
+          
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Upload failed: ${e.toString()}'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
         }
       }
     } catch (e) {
-      print('Error picking file: $e');
+      print('[FilesScreen] Error in _pickFiles: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          SnackBar(
+            content: Text('Error: ${e.toString()}'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
         );
       }
     }
