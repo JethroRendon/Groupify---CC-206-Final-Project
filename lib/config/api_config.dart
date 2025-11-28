@@ -1,19 +1,29 @@
 import 'package:flutter/foundation.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class ApiConfig {
-  // When running on the web, use the current page origin so requests
-  // are same-origin (avoids mixed-content when the page is served over HTTPS).
-  // For mobile/desktop, default to localhost (change to your machine IP for real devices).
+  // Production backend URL - deployed on Render
+  static const String defaultBaseUrl = 'https://groupify-cc-206-final-project.onrender.com/api';
+  
+  // For local testing, use: 'http://192.168.1.40:3000/api'
+  
+  static Future<String> getBaseUrl() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString('backend_url') ?? defaultBaseUrl;
+  }
+  
+  static Future<void> setBaseUrl(String url) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString('backend_url', url);
+  }
+  
   static String get baseUrl {
-    // NOTE: In development the Flutter web dev server runs on a different port
-    // (e.g. 60879). Requesting the app origin will return the web app HTML
-    // (index.html) instead of hitting the backend. Use the backend port
-    // explicitly for web during development.
     if (kIsWeb) {
       return 'http://localhost:3000/api';
     }
 
-    return 'http://localhost:3000/api';
+    // Use production URL for released app
+    return defaultBaseUrl;
   }
 
   // For Android Emulator, use: http://10.0.2.2:3000/api

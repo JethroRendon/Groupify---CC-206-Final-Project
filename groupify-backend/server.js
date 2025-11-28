@@ -15,6 +15,11 @@ const dashboardRoutes = require('./routes/dashboard');
 
 const app = express();
 
+// Health check endpoint for Render
+app.get('/healthz', (req, res) => {
+  res.status(200).json({ status: 'ok', message: 'Server is running' });
+});
+
 // Initialize Firebase
 require('./config/firebase');
 
@@ -85,8 +90,9 @@ app.use((err, req, res, next) => {
 
 // Start Server with explicit error handling
 const PORT = process.env.PORT || 3000;
-const server = app.listen(PORT, () => {
+const server = app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Groupify Server running on port ${PORT}`);
+  console.log(`📍 Accessible at: http://192.168.1.40:${PORT}`);
   console.log(`📍 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔥 Firebase Project: ${process.env.FIREBASE_PROJECT_ID}`);
   console.log(`\n📋 Available Endpoints:`);

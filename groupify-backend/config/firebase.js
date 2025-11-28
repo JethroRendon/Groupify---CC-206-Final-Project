@@ -1,5 +1,12 @@
 const admin = require('firebase-admin');
-const serviceAccount = require('../serviceAccountKey.json');
+
+// Use environment variable for service account in production, file in development
+let serviceAccount;
+if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+  serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+} else {
+  serviceAccount = require('../serviceAccountKey.json');
+}
 
 const projectId = process.env.FIREBASE_PROJECT_ID || serviceAccount.project_id;
 const configuredBucket = process.env.FIREBASE_STORAGE_BUCKET || `${projectId}.appspot.com`;
