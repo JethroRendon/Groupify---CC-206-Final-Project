@@ -17,8 +17,11 @@ class FilesService {
     String? description,
   }) async {
     try {
+      print('[FilesService] Starting upload for $fileName, size: ${fileBytes.length} bytes');
       final token = await _authService.getToken();
+      print('[FilesService] Got auth token');
       final uri = Uri.parse('${ApiConfig.baseUrl}/files/upload');
+      print('[FilesService] Upload URL: $uri');
 
       var request = http.MultipartRequest('POST', uri);
       request.headers['Authorization'] = 'Bearer $token';
@@ -31,15 +34,25 @@ class FilesService {
         filename: fileName,
       ));
 
-      final streamedResponse = await request.send();
+      print('[FilesService] Sending request...');
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 60),
+        onTimeout: () {
+          throw Exception('Upload timeout - file may be too large or network is slow');
+        },
+      );
+      print('[FilesService] Got response: ${streamedResponse.statusCode}');
+      
       final response = await http.Response.fromStream(streamedResponse);
+      print('[FilesService] Response body: ${response.body}');
 
       if (response.statusCode >= 200 && response.statusCode < 300) {
         return json.decode(response.body);
       } else {
-        throw Exception('Upload failed: ${response.body}');
+        throw Exception('Upload failed (${response.statusCode}): ${response.body}');
       }
     } catch (e) {
+      print('[FilesService] Upload error: $e');
       throw Exception('Failed to upload file: $e');
     }
   }
