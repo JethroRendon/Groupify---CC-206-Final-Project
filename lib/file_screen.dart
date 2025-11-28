@@ -431,9 +431,11 @@ class _FilesScreenState extends State<FilesScreen> {
 
       final file = result.files.first;
       print('[FilesScreen] File selected: ${file.name}, size: ${file.size} bytes');
+      print('[FilesScreen] File path: ${file.path}');
+      print('[FilesScreen] File bytes null: ${file.bytes == null}');
       
-      if (file.bytes == null) {
-        print('[FilesScreen] ERROR: File bytes are null');
+      if (file.path == null && file.bytes == null) {
+        print('[FilesScreen] ERROR: Both file path and bytes are null');
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -505,7 +507,8 @@ class _FilesScreenState extends State<FilesScreen> {
       try {
         print('[FilesScreen] Starting upload...');
         final response = await _filesService.uploadFile(
-          fileBytes: file.bytes!,
+          filePath: file.path,
+          fileBytes: file.bytes,
           fileName: file.name,
           groupId: selectedGroupId,
         );

@@ -1,9 +1,10 @@
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'dart:io';
 import '../config/api_config.dart';
 import 'auth_service.dart';
 import 'api_client.dart';
-import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 
 class FilesService {
@@ -11,13 +12,14 @@ class FilesService {
   final ApiClient _apiClient = ApiClient();
 
   Future<Map<String, dynamic>> uploadFile({
-    required List<int> fileBytes,
+    List<int>? fileBytes,
+    String? filePath,
     required String fileName,
     required String groupId,
     String? description,
   }) async {
     try {
-      print('[FilesService] Starting upload for $fileName, size: ${fileBytes.length} bytes');
+      print('[FilesService] Starting upload for $fileName');
       final token = await _authService.getToken();
       print('[FilesService] Got auth token');
       final uri = Uri.parse('${ApiConfig.baseUrl}/files/upload');
@@ -28,11 +30,24 @@ class FilesService {
       request.fields['groupId'] = groupId;
       if (description != null) request.fields['description'] = description;
       
-      request.files.add(http.MultipartFile.fromBytes(
-        'file',
-        fileBytes,
-        filename: fileName,
-      ));
+      // Use filePath for mobile, fileBytes for web
+      if (filePath != null && !kIsWeb) {
+        print('[FilesService] Using file path: $filePath');
+        request.files.add(await http.MultipartFile.fromPath(
+          'file',
+          filePath,
+          filename: fileName,
+        ));
+      } else if (fileBytes != null) {
+        print('[FilesService] Using file bytes, size: ${fileBytes.length} bytes');
+        request.files.add(http.MultipartFile.fromBytes(
+          'file',
+          fileBytes,
+          filename: fileName,
+        ));
+      } else {
+        throw Exception('Either filePath or fileBytes must be provided');
+      }
 
       print('[FilesService] Sending request...');
       final streamedResponse = await request.send().timeout(
