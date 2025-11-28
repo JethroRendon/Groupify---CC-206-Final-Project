@@ -86,6 +86,7 @@ flutter:
   assets:
     - assets/images/groupifylogo.png
     - assets/images/glogo.png
+    - assets/images/groupify_logo.jpeg
     - assets/images/student.png
     - assets/images/profilepic.png
     - assets/images/numberoftaskimage.png
@@ -122,6 +123,6 @@ flutter:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: "assets/images/glogo.png"
+  image_path: "assets/images/groupify_logo.jpeg"
   adaptive_icon_background: "#FFFFFF"
-  adaptive_icon_foreground: "assets/images/glogo.png"
+  adaptive_icon_foreground: "assets/images/groupify_logo.jpeg"
